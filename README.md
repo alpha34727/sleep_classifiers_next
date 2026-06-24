@@ -7,7 +7,7 @@
 
 ## 📖 專案簡介
 
-`sleep_classifiers-next` 是一個將原著 Olivia Walch 團隊開發的 Apple Watch 睡眠分期預測演算法（發表於學術論文 *[zsz180.pdf](file:///c:/Users/Johnsou/Desktop/sleep_classifiers_next/sleep_classifiers/zsz180.pdf)*）利用現代軟體工程方法進行全面重構與演算法升級的專案。
+`sleep_classifiers-next` 是一個將原著 Olivia Walch 團隊開發的 Apple Watch 睡眠分期預測演算法（發表於學術論文 `Sleep stage prediction with raw acceleration and heart rate data from a consumer wearable device.`）利用現代軟體工程方法進行全面重構與演算法升級的專案。
 
 本專案保留了原著的核心訊號處理與物理建模邏輯（如差分高斯 DoG 濾波器、雙向高斯平滑卷積、餘弦時間特徵等），並透過現代化 Python 工具鏈進行重寫，解決了舊版專案記憶體吞吐量極大、無法並行計算、磁碟 I/O 效率差等痛點。同時，本專案全新整合了現代梯度提升樹（GBDT）模型，並提供了物件導向的交叉驗證與高品質學術圖表繪製流程。
 
@@ -151,7 +151,5 @@ pytest
 ### 引用文獻 (Citations)
 若您在學術研究中使用了此預測模型或其衍生版本，請引用原著論文：
 ```text
-Walch, O., Huang, Y., Forger, D. B., & Goldstein, C. (2019). 
-Sleep stage prediction with raw acceleration and heart rate data from a consumer wearable device. 
-Sleep, 42(12), zsz180.
+Walch O, Huang Y, Forger D, Goldstein C. Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device. Sleep. 2019 Dec 24;42(12):zsz180. doi: 10.1093/sleep/zsz180. PMID: 31579900; PMCID: PMC6930135.
 ```
