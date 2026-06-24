@@ -31,8 +31,13 @@ def test_subject_feature_alignment():
     legacy_time_path = project_root / f"sleep_classifiers/outputs/features/{subject_id}_time_feature.out"
     legacy_cosine_path = project_root / f"sleep_classifiers/outputs/features/{subject_id}_cosine_feature.out"
     
+    # 防禦性跳過：若舊專案對照檔案不存在（如環境清理或部署在 CI），則跳過此測試
+    if not (raw_counts_path.is_file() and legacy_counts_path.is_file()):
+        pytest.skip("Legacy sleep_classifiers data/outputs not found. Skipping alignment test.")
+
     # 載入舊專案預先算好的特徵陣列
     legacy_counts = np.loadtxt(legacy_counts_path)
+
     legacy_hr = np.loadtxt(legacy_hr_path)
     legacy_time = np.loadtxt(legacy_time_path)
     legacy_cosine = np.loadtxt(legacy_cosine_path)
