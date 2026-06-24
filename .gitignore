@@ -1,7 +1,7 @@
-# data/
+data/
 data_old/
 sleep_classifiers/
-# outputs/
+outputs/
 
 # Python-generated files
 __pycache__/
