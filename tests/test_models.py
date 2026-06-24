@@ -14,7 +14,8 @@ from src.config import FEATURE_COLS
 from src.models.baseline import (
     LogisticRegressionClassifier,
     RandomForestClassifierWrapper,
-    MLPClassifierWrapper
+    MLPClassifierWrapper,
+    KNNClassifierWrapper
 )
 from src.models.modern_gbdt import LightGBMClassifier, XGBoostClassifier
 
@@ -24,7 +25,8 @@ MODELS = [
     RandomForestClassifierWrapper,
     MLPClassifierWrapper,
     LightGBMClassifier,
-    XGBoostClassifier
+    XGBoostClassifier,
+    KNNClassifierWrapper
 ]
 
 def test_data_loader_label_mapping():

@@ -81,6 +81,7 @@ class XGBoostClassifier(BaseSleepClassifier):
             "eval_metric": "logloss"
         }
         self.defaults.update(kwargs)
+        self.defaults.pop("class_weight", None)
         self._model = None
 
     @property
