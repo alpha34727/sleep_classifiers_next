@@ -1,7 +1,7 @@
-data/
-data_old/
-sleep_classifiers/
-outputs/
+/data/
+/data_old/
+/sleep_classifiers/
+/outputs/
 
 # Python-generated files
 __pycache__/
