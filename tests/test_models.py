@@ -1,110 +1,130 @@
-import sys
-import tempfile
-from pathlib import Path
+import unittest
 import numpy as np
 import polars as pl
-import pytest
+import tempfile
+import shutil
+from pathlib import Path
 
-# 將專案根目錄加入 sys.path 以防 ModuleNotFoundError
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
-
-from src.data_loader import DataLoader
-from src.config import FEATURE_COLS
-from src.models.baseline import (
-    LogisticRegressionClassifier,
-    RandomForestClassifierWrapper,
-    MLPClassifierWrapper,
-    KNNClassifierWrapper
+from sleep_classifiers_next.config import Settings
+from sleep_classifiers_next.models import (
+    RandomForestSleepClassifier,
+    LogisticRegressionSleepClassifier,
+    KNNSleepClassifier,
+    MLPSleepClassifier,
+    LightGBMSleepClassifier,
 )
-from src.models.modern_gbdt import LightGBMClassifier, XGBoostClassifier
+from sleep_classifiers_next.evaluation import (
+    CrossValidationService,
+    MetricsCalculator,
+)
 
-# 所有模型列表
-MODELS = [
-    LogisticRegressionClassifier,
-    RandomForestClassifierWrapper,
-    MLPClassifierWrapper,
-    LightGBMClassifier,
-    XGBoostClassifier,
-    KNNClassifierWrapper
-]
+class TestModelsAndEvaluation(unittest.TestCase):
+    def setUp(self):
+        self.tmp_dir = Path(tempfile.mkdtemp())
+        self.settings = Settings()
+        self.settings.paths.output_dir = self.tmp_dir
+        self.settings.paths.make_dirs()
 
-def test_data_loader_label_mapping():
-    """驗證 DataLoader 對二分類與三分類睡眠標籤的映射正確性"""
-    # 建立模擬的受試者 Parquet 數據
-    subject_id = "test_subj"
-    mock_data = pl.DataFrame({
-        "timestamp": [100.0, 130.0, 160.0, 190.0, 220.0, 250.0],
-        # 睡眠階段標籤：0=Wake, 1=N1, 2=N2, 3=N3, 4=N4, 5=REM, -1=Unscored
-        "stage": [0, 1, 2, 5, -1, 3],
-        "count_feature": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
-        "hr_feature": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        "time_feature": [0.0, 0.01, 0.02, 0.03, 0.04, 0.05],
-        "cosine_feature": [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
-    })
-    
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = Path(tmpdir)
-        mock_data.write_parquet(tmp_path / f"{subject_id}.parquet")
-        
-        # 1. 測試二分類映射
-        X2, y2, groups2 = DataLoader.load_all_subjects(tmp_path, [subject_id], n_classes=2)
-        # -1 (Unscored) 會被過濾掉，所以剩餘 5 個點
-        assert X2.shape == (5, 4)
-        assert len(y2) == 5
-        # y2 應該只有 0 (Wake) 與 1 (Sleep)
-        assert np.array_equal(y2, np.array([0, 1, 1, 1, 1]))
-        assert np.array_equal(groups2, np.array([subject_id] * 5))
-        
-        # 2. 測試三分類映射
-        X3, y3, groups3 = DataLoader.load_all_subjects(tmp_path, [subject_id], n_classes=3)
-        assert X3.shape == (5, 4)
-        assert len(y3) == 5
-        # y3 應該是 0 (Wake), 1 (NREM: N1/N2/N3), 2 (REM: 5)
-        # stage 映射: 0->0, 1->1, 2->1, 5->2, 3->1
-        assert np.array_equal(y3, np.array([0, 1, 1, 2, 1]))
-        assert np.array_equal(groups3, np.array([subject_id] * 5))
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
 
-@pytest.mark.parametrize("model_cls", MODELS)
-@pytest.mark.parametrize("n_classes", [2, 3])
-def test_models_fit_predict_save(model_cls, n_classes):
-    """驗證所有模型在二分類與三分類下具有相同的 API 接口，且 fit, predict 正常"""
-    # 建立模擬訓練數據
-    np.random.seed(42)
-    X = np.random.rand(50, 4)
-    if n_classes == 2:
+    def test_model_strategies_dummy_fit(self):
+        # Generate simple dummy training dataset: 50 samples, 4 features
+        np.random.seed(42)
+        X = np.random.randn(50, 4)
         y = np.random.randint(0, 2, size=50)
-    else:
-        y = np.random.randint(0, 3, size=50)
+
+        classifiers = [
+            RandomForestSleepClassifier(),
+            LogisticRegressionSleepClassifier(),
+            KNNSleepClassifier(),
+            MLPSleepClassifier(max_iter=50),  # low max_iter for speed
+            LightGBMSleepClassifier(),
+        ]
+
+        for clf in classifiers:
+            # Low max_iter or simple settings to run quickly
+            clf.train(X, y, scoring="roc_auc")
+            
+            # Predict
+            preds = clf.predict(X)
+            probs = clf.predict_proba(X)
+            
+            self.assertEqual(len(preds), 50)
+            self.assertEqual(probs.shape, (50, 2))
+            self.assertTrue(np.all((preds == 0) | (preds == 1)))
+
+    def test_metrics_calculator_sleep_wake(self):
+        true_labels = np.array([0, 1, 0, 1, 0, 1])
+        probs = np.array([
+            [0.9, 0.1],
+            [0.2, 0.8],
+            [0.4, 0.6],  # will predict 1 at threshold 0.5
+            [0.1, 0.9],
+            [0.8, 0.2],
+            [0.3, 0.7]
+        ])
         
-    model = model_cls()
-    
-    # 1. 訓練
-    model.fit(X, y)
-    
-    # 2. 預測
-    preds = model.predict(X)
-    assert preds.shape == (50,)
-    assert set(preds).issubset(set(y))
-    
-    # 3. 概率預測
-    probs = model.predict_proba(X)
-    assert probs.shape == (50, n_classes)
-    np.testing.assert_allclose(np.sum(probs, axis=1), 1.0, atol=1e-5)
-    
-    # 4. 儲存與載入
-    with tempfile.NamedTemporaryFile(delete=False) as tmpfile:
-        model_path = Path(tmpfile.name)
-    try:
-        model.save_model(model_path)
+        perf = MetricsCalculator.calculate_sleep_wake(true_labels, probs, sleep_threshold=0.5)
+        self.assertGreaterEqual(perf.accuracy, 0.0)
+        self.assertLessEqual(perf.accuracy, 1.0)
+        self.assertTrue(0.0 <= perf.auc <= 1.0)
+        self.assertTrue(-1.0 <= perf.kappa <= 1.0)
+
+    def test_metrics_calculator_three_class(self):
+        true_labels = np.array([0, 1, 2, 0, 1, 2])
+        probs = np.array([
+            [0.8, 0.1, 0.1],
+            [0.1, 0.8, 0.1],
+            [0.1, 0.1, 0.8],
+            [0.7, 0.2, 0.1],
+            [0.2, 0.7, 0.1],
+            [0.2, 0.1, 0.7]
+        ])
+
+        perf = MetricsCalculator.calculate_three_class(true_labels, probs, wake_threshold=0.5, rem_threshold=0.35)
+        self.assertEqual(perf.accuracy, 1.0)
+        self.assertEqual(perf.kappa, 1.0)
+        self.assertEqual(perf.wake_correct, 1.0)
+        self.assertEqual(perf.nrem_correct, 1.0)
+        self.assertEqual(perf.rem_correct, 1.0)
+
+    def test_cross_validation_service(self):
+        # Create 3 dummy subject Parquet files in tmp_dir/features/
+        # subject names: subj1, subj2, subj3
+        subjects = ["subj1", "subj2", "subj3"]
+        features_dir = self.settings.paths.features_dir
         
-        # 重新建立一個新實例並載入
-        new_model = model_cls()
-        new_model.load_model(model_path)
+        np.random.seed(42)
+        for sid in subjects:
+            df = pl.DataFrame({
+                "subject_id": [sid] * 20,
+                "timestamp": np.arange(20) * 30.0,
+                "motion_count": np.random.randn(20),
+                "heart_rate_std": np.random.randn(20),
+                "cosine_proxy": np.random.randn(20),
+                "circadian_proxy": np.random.randn(20),
+                "time_proxy": np.random.randn(20),
+                "label": np.random.choice([0, 1, 2, 5], size=20)  # mix of Wake, N1/N2, REM
+            })
+            df.write_parquet(features_dir / f"{sid}_features.parquet")
+
+        cv_service = CrossValidationService(self.settings)
+        splits = cv_service.get_loso_splits(subjects)
+        self.assertEqual(len(splits), 3)
+        self.assertEqual(splits[0].testing_set, ["subj1"])
+        self.assertEqual(splits[0].training_set, ["subj2", "subj3"])
+
+        # Run LOSO cross-validation with LogisticRegression classifier
+        clf = LogisticRegressionSleepClassifier()
+        feature_cols = ["motion_count", "heart_rate_std", "cosine_proxy"]
         
-        # 驗證載入後的預測結果是否與原先一致
-        new_preds = new_model.predict(X)
-        assert np.array_equal(preds, new_preds)
-    finally:
-        if model_path.is_file():
-            model_path.unlink()
+        results = cv_service.run_cross_validation(
+            clf, splits, feature_cols, is_three_class=False, scoring="roc_auc"
+        )
+        
+        self.assertEqual(len(results), 3)
+        for res in results:
+            self.assertIn("true_labels", res)
+            self.assertIn("probabilities", res)
+            self.assertEqual(res["probabilities"].shape[1], 2)
