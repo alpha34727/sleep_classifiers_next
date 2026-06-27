@@ -1,5 +1,8 @@
 import gc
 import random
+import warnings
+warnings.filterwarnings("ignore")
+
 import numpy as np
 import polars as pl
 from typing import List, Tuple, Dict
@@ -35,7 +38,9 @@ def run_single_fold(
     strategy_kwargs: dict,
     feature_cols: List[str],
     classification_type: str, # "sleep_wake" or "three_class"
-    scoring: str
+    scoring: str,
+    compute_shap: bool = False,
+    shap_output_path: str = ""
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Worker function executed in parallel.
@@ -106,6 +111,11 @@ def run_single_fold(
         
     class_probs = strategy.predict_proba(X_test)
     
+    # Compute SHAP if requested and it is a tree model
+    if compute_shap and is_tree_model:
+        from sleep_next.visualize.plotters import plot_tree_shap_summary
+        plot_tree_shap_summary(strategy.model, X_test, feature_cols, shap_output_path)
+    
     # Free memory
     del X_train, y_train, X_test
     gc.collect()
@@ -121,8 +131,11 @@ def run_cross_validation(
     classification_type: str, # "sleep_wake" or "three_class"
     number_of_splits: int = 20,
     test_fraction: float = 0.3,
-    scoring: str = "roc_auc"
+    scoring: str = "roc_auc",
+    compute_shap_last_fold: bool = False,
+    shap_output_path: str = ""
 ) -> List[RawPerformance]:
+    from tqdm import tqdm
     
     splits = []
     
@@ -148,6 +161,10 @@ def run_cross_validation(
     with ProcessPoolExecutor() as executor:
         futures = []
         for idx, (train_ids, test_ids) in enumerate(splits):
+            # Check if this is the last fold
+            is_last_fold = (idx == len(splits) - 1)
+            comp_shap = compute_shap_last_fold and is_last_fold
+            
             futures.append(
                 executor.submit(
                     run_single_fold,
@@ -157,11 +174,14 @@ def run_cross_validation(
                     strategy_kwargs=strategy_kwargs,
                     feature_cols=feature_cols,
                     classification_type=classification_type,
-                    scoring=scoring
+                    scoring=scoring,
+                    compute_shap=comp_shap,
+                    shap_output_path=shap_output_path
                 )
             )
             
-        for future in as_completed(futures):
+        desc = f"[{strategy_cls.__name__[:12]} | MC {len(splits)} folds]"
+        for future in tqdm(as_completed(futures), total=len(futures), desc=desc, leave=False):
             try:
                 y_test, class_probs = future.result()
                 raw_performances.append(RawPerformance(y_test, class_probs))

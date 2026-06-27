@@ -84,6 +84,7 @@ class NeuralNetStrategy(BaseClassifierStrategy):
             solver='adam',
             verbose=False,
             n_iter_no_change=20,
+            early_stopping=True,
             **kwargs
         )
         
@@ -96,4 +97,4 @@ class NeuralNetStrategy(BaseClassifierStrategy):
         
     @classmethod
     def get_hyperparameter_grid(cls) -> dict:
-        return {'alpha': [0.1, 0.01, 0.001, 0.0001, 0.00001]}
+        return {'alpha': [0.1, 0.01, 0.001]}

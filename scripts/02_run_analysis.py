@@ -35,6 +35,13 @@ FEATURE_SETS = [
     ["feature_count", "feature_hr", "feature_cosine"]
 ]
 
+FEATURE_TO_KEY = {
+    ("feature_count",): "motion",
+    ("feature_hr",): "hr",
+    ("feature_count", "feature_hr"): "motion_hr",
+    ("feature_count", "feature_hr", "feature_cosine"): "all"
+}
+
 def summarize_fold_at_tpr(raw_performances, target_tpr: float):
     accuracies = []
     wake_corrects = []
@@ -148,7 +155,7 @@ def main():
                 number_of_splits=args.trials,
                 scoring="roc_auc"
             )
-            sw_perf_dict[tuple(feature_set)] = raw_performances
+            sw_perf_dict[FEATURE_TO_KEY[tuple(feature_set)]] = raw_performances
             
         # Draw Sleep-Wake curves & histograms
         plotters.make_roc_sw(cls_name, sw_perf_dict)
@@ -170,7 +177,7 @@ def main():
                 number_of_splits=args.trials,
                 scoring="neg_log_loss"
             )
-            tc_perf_dict[tuple(feature_set)] = raw_performances
+            tc_perf_dict[FEATURE_TO_KEY[tuple(feature_set)]] = raw_performances
             
         # Draw Three-Class curves & Bland-Altman plots
         plotters.make_roc_one_vs_rest(cls_name, tc_perf_dict)

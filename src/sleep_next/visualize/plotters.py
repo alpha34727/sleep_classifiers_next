@@ -9,20 +9,19 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 from sklearn.metrics import roc_curve, precision_recall_curve, accuracy_score, cohen_kappa_score, recall_score, precision_score
-from sleep_next.config import settings
+from sleep_next.config import settings, normalize_feature_label
 from sleep_next.evaluate.metrics import get_tst, get_wake_after_sleep_onset, get_sleep_efficiency, get_sleep_onset_latency, get_time_in_rem, get_time_in_nrem
 
 def get_label(feature_set) -> str:
-    s = set(feature_set)
-    if s == {"feature_count"}: return 'Motion only'
-    if s == {"feature_hr"}: return 'HR only'
-    if s == {"feature_count", "feature_hr"}: return 'Motion, HR'
-    if s == {"feature_count", "feature_hr", "feature_circadian"}: return 'Motion, HR, and Clock'
-    if s == {"feature_count", "feature_hr", "feature_cosine"}: return 'Motion, HR, and Cosine'
-    if s == {"feature_count", "feature_hr", "feature_time"}: return 'Motion, HR, and Time'
-    return ", ".join(feature_set)
+    return normalize_feature_label(feature_set)
 
 def get_color(feature_set) -> str:
+    if isinstance(feature_set, str):
+        if feature_set == "motion": return sns.xkcd_rgb["denim blue"]
+        if feature_set == "hr": return sns.xkcd_rgb["yellow orange"]
+        if feature_set == "motion_hr": return sns.xkcd_rgb["medium green"]
+        if feature_set == "all": return sns.xkcd_rgb["plum"]
+        
     s = set(feature_set)
     if s == {"feature_count"}: return sns.xkcd_rgb["denim blue"]
     if s == {"feature_hr"}: return sns.xkcd_rgb["yellow orange"]
@@ -83,7 +82,7 @@ def make_roc_sw(classifier_name: str, performance_dict: dict, description: str =
     num_trials = len(next(iter(performance_dict.values())))
     out_path = settings.FIGURE_DIR / f"{classifier_name}_{num_trials}_{description}_sw_roc.png"
     plt.savefig(out_path, dpi=300)
-    plt.close()
+    plt.close('all')
 
 def make_pr_sw(classifier_name: str, performance_dict: dict, description: str = ""):
     plt.figure()
@@ -121,7 +120,7 @@ def make_pr_sw(classifier_name: str, performance_dict: dict, description: str = 
     num_trials = len(next(iter(performance_dict.values())))
     out_path = settings.FIGURE_DIR / f"{classifier_name}_{num_trials}_{description}_sw_pr.png"
     plt.savefig(out_path, dpi=300)
-    plt.close()
+    plt.close('all')
 
 def make_roc_one_vs_rest(classifier_name: str, performance_dict: dict, description: str = ""):
     num_trials = len(next(iter(performance_dict.values())))
@@ -138,7 +137,7 @@ def make_roc_one_vs_rest(classifier_name: str, performance_dict: dict, descripti
     plt.title(classifier_name, fontsize=18, fontname='Arial', fontweight='bold')
     plt.legend(loc="lower right")
     plt.savefig(settings.FIGURE_DIR / f"{classifier_name}_{num_trials}_{description}_ovr_wake_roc.png", dpi=300)
-    plt.close()
+    plt.close('all')
     
     # NREM ROC (class 1)
     plt.figure()
@@ -152,7 +151,7 @@ def make_roc_one_vs_rest(classifier_name: str, performance_dict: dict, descripti
     plt.title(classifier_name, fontsize=18, fontname='Arial', fontweight='bold')
     plt.legend(loc="lower right")
     plt.savefig(settings.FIGURE_DIR / f"{classifier_name}_{num_trials}_{description}_ovr_nrem_roc.png", dpi=300)
-    plt.close()
+    plt.close('all')
     
     # REM ROC (class 2)
     plt.figure()
@@ -166,7 +165,7 @@ def make_roc_one_vs_rest(classifier_name: str, performance_dict: dict, descripti
     plt.title(classifier_name, fontsize=18, fontname='Arial', fontweight='bold')
     plt.legend(loc="lower right")
     plt.savefig(settings.FIGURE_DIR / f"{classifier_name}_{num_trials}_{description}_ovr_rem_roc.png", dpi=300)
-    plt.close()
+    plt.close('all')
 
 def build_three_class_roc_with_binary_search(raw_performances):
     number_of_wake_scored_as_sleep_bins = 20
@@ -384,7 +383,7 @@ def make_three_class_roc(classifier_name: str, performance_dict: dict, descripti
     num_trials = len(next(iter(performance_dict.values())))
     out_path = settings.FIGURE_DIR / f"{classifier_name}_{num_trials}_{description}_three_class_roc.png"
     plt.savefig(out_path, dpi=300)
-    plt.close()
+    plt.close('all')
     
     return results
 
@@ -435,7 +434,7 @@ def make_single_threshold_histograms(classifier_name: str, performance_dict: dic
         plt.tight_layout()
         out_name = settings.FIGURE_DIR / f"figure_{classifier_name}_{description}_single_threshold_histograms.png"
         plt.savefig(out_name, dpi=300)
-        plt.close()
+        plt.close('all')
 
 def apply_threshold_three_class(rp, wake_threshold, rem_threshold):
     predicted_labels = []
@@ -524,12 +523,12 @@ def make_bland_altman(classifier_name: str, performance_dict: dict, description:
     plt.tight_layout()
     out_name = settings.FIGURE_DIR / f"figure_{classifier_name}_{description}_bland_altman.png"
     plt.savefig(out_name, dpi=300)
-    plt.close()
+    plt.close('all')
 
 def combine_plots_as_grid(classifiers, number_of_trials, plot_extension):
     combined_filenames = []
     for cls_name in classifiers:
-        combined_filenames.append(settings.FIGURE_DIR / f"{cls_name}_{number_of_trials}_{plot_extension}.png")
+        combined_filenames.append(settings.FIGURE_DIR / f"{cls_name}_{number_of_trials}__{plot_extension}.png")
         
     images = list(map(Image.open, [str(p) for p in combined_filenames]))
     widths, heights = zip(*(i.size for i in images))
@@ -544,3 +543,26 @@ def combine_plots_as_grid(classifiers, number_of_trials, plot_extension):
         new_image.paste(im, (x_offset, y_offset))
         
     new_image.save(settings.FIGURE_DIR / f"figure_{number_of_trials}{plot_extension}.png")
+
+def plot_tree_shap_summary(model, X_test, feature_names, output_path):
+    import shap
+    import matplotlib.pyplot as plt
+    
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X_test)
+    
+    plt.figure(figsize=(10, 6))
+    
+    # Handle list vs array shape
+    if isinstance(shap_values, list):
+        shap.summary_plot(shap_values, X_test, feature_names=feature_names, show=False)
+    elif isinstance(shap_values, np.ndarray) and len(shap_values.shape) == 3:
+        # Multiclass 3D array from some versions of SHAP/XGBoost
+        # We can sum across classes or pick class 1
+        shap.summary_plot(shap_values[:, :, 1], X_test, feature_names=feature_names, show=False)
+    else:
+        shap.summary_plot(shap_values, X_test, feature_names=feature_names, show=False)
+        
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300)
+    plt.close('all')
