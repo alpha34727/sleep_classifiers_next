@@ -105,12 +105,22 @@ def equalize_three_class_thresholds(
     for goal_fraction_wake_scored_as_sleep in goal_fraction_wake_scored_as_sleep_spread:
         fraction_wake_scored_as_sleep = -1.0
         binary_search_counter = 0
+
+        # --- FIX E1 ---
+        # The legacy code (curve_performance_builder.py:124-127) resets these to
+        # 0.5 / 0.25 at the *start of every goal-fraction's* binary search (guarded
+        # by `if binary_search_counter == 0`).  Having them initialised only once
+        # outside the loop caused each bin to warm-start from the previous bin's
+        # converged threshold ("bleed"), exhausting the 50-iteration budget for
+        # distant bins and silently skipping them, which corrupted the final
+        # interp-derived REM/NREM accuracy values.
         threshold_for_sleep = 0.5
         threshold_delta = 0.25
-        
+
         while (fraction_wake_scored_as_sleep < goal_fraction_wake_scored_as_sleep - false_positive_buffer
                or fraction_wake_scored_as_sleep >= goal_fraction_wake_scored_as_sleep + false_positive_buffer) \
                and binary_search_counter < max_attempts_binary_search_wake:
+
             
             if binary_search_counter > 0:
                 if fraction_wake_scored_as_sleep < goal_fraction_wake_scored_as_sleep - false_positive_buffer:

@@ -84,7 +84,10 @@ class NeuralNetStrategy(BaseClassifierStrategy):
             solver='adam',
             verbose=False,
             n_iter_no_change=20,
-            early_stopping=True,
+            # early_stopping intentionally omitted: legacy code trains on the full
+            # training set and monitors training-loss plateau (n_iter_no_change),
+            # not a held-out validation-score plateau.  Adding early_stopping=True
+            # would silently remove ~10 % of training data from every fold.
             **kwargs
         )
         
@@ -97,4 +100,8 @@ class NeuralNetStrategy(BaseClassifierStrategy):
         
     @classmethod
     def get_hyperparameter_grid(cls) -> dict:
-        return {'alpha': [0.1, 0.01, 0.001]}
+        # Restored full 5-value grid matching legacy parameter_search.py:9.
+        # The two finest values (1e-4, 1e-5) were previously absent, preventing
+        # GridSearchCV from finding lightly-regularised solutions that are often
+        # optimal on this class-imbalanced dataset.
+        return {'alpha': [0.1, 0.01, 0.001, 0.0001, 0.00001]}

@@ -86,24 +86,40 @@ def run_single_fold(
         
     # Custom sample weighting if model supports it (like XGBoost / LightGBM)
     is_tree_model = "XGB" in strategy_cls.__name__ or "LightGBM" in strategy_cls.__name__
-    
+
     # Grid search cross-validation
     param_grid = strategy.get_hyperparameter_grid()
-    
+
+    # --- FIX D13 ---
+    # The legacy code (classifier_service.py:106-109) sets class_weight on the
+    # estimator *before* GridSearchCV.fit(), so every internal CV fold evaluates
+    # under balanced class weighting.  Without this, hyperparameter selection is
+    # driven by an imbalanced metric (sleep >> wake), which biases C / max_depth /
+    # alpha toward sleep-favoring values and degrades wake specificity by 3-8 pp.
+    #
+    # We inject balanced class weights here for models that accept the param (RF, LR).
+    # KNN does not have a class_weight parameter (matching the legacy behaviour where
+    # KNN was also not explicitly weighted during GridSearchCV).
+    from sleep_next.models.legacy import get_class_weights as _get_class_weights
+    balanced_cw = _get_class_weights(y_train)
+    if hasattr(strategy.model, 'class_weight'):
+        strategy.model.set_params(class_weight=balanced_cw)
+
     if is_tree_model:
-        # compute sample weights
-        from sklearn.utils import class_weight
+        # Boosted tree models use sample_weight via fit(), not class_weight param.
+        from sklearn.utils import class_weight as _cw_module
         classes = np.unique(y_train)
-        weights = class_weight.compute_class_weight('balanced', classes=classes, y=y_train)
+        weights = _cw_module.compute_class_weight('balanced', classes=classes, y=y_train)
         weight_dict = {c: w for c, w in zip(classes, weights)}
         sample_weight = np.array([weight_dict[val] for val in y_train], dtype=np.float32)
-        
+
         grid_search = GridSearchCV(strategy.model, param_grid, scoring=scoring, cv=3)
         grid_search.fit(X_train, y_train, sample_weight=sample_weight)
         strategy.model.set_params(**grid_search.best_params_)
         strategy.fit(X_train, y_train)
     else:
-        # If standard Sklearn classifier
+        # Standard sklearn classifiers: class_weight already set on estimator above,
+        # so GridSearchCV internal folds will use balanced weighting automatically.
         grid_search = GridSearchCV(strategy.model, param_grid, scoring=scoring, cv=3)
         grid_search.fit(X_train, y_train)
         strategy.model.set_params(**grid_search.best_params_)
