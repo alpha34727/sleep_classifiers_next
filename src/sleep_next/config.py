@@ -3,8 +3,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # Paths (Default to paths mapped on user's system)
-    DATA_DIR: Path = Path("C:/Users/alpha/Desktop/sleep_classifiers_next/data")
-    OUTPUT_DIR: Path = Path("C:/Users/alpha/Desktop/sleep_classifiers_next/outputs")
+    DATA_DIR: Path = Path("./data")
+    OUTPUT_DIR: Path = Path("./outputs")
     
     @property
     def CROPPED_DIR(self) -> Path:
