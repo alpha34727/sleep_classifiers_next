@@ -155,12 +155,34 @@ sleep_classifiers_next/
    ```
 2. 畫面會顯示處理進度。預處理完成後，您會在專案中看到新產生的 `outputs/cropped/` 與 `outputs/features/` 資料夾，裡面存放著處理好的特徵檔案。
 
-### 第六步：執行分析並自動產生所有圖表
-執行以下指令，系統將會使用 6 種機器學習模型（包含隨機森林、XGBoost、LightGBM 等）進行蒙地卡羅交叉驗證，並在完成後自動產出學術圖表與對比報告：
+### 第六步：執行分析與圖表生成 (Reproduce Figures & Tables)
+
+新版架構透過單一入口腳本 `02_reproduce_all.py` 管理所有的實驗，並具備彈性的參數控制能力。您可以根據需求，自由決定要重現整篇論文的所有結果，或是單獨生成特定的圖表或表格，大幅節省運算時間。
+
+#### 1. 完整重現所有結果 (Reproduce All)
+若您想要一次性跑完所有的二分類與三分類交叉驗證，並生成所有的圖表與 Markdown 數據表格，請直接執行（不加任何參數預設即為跑完全部）：
 ```bash
-uv run scripts/03_reproduce_all.py --binary-splits 50 --three-class-splits 20
+uv run scripts/02_reproduce_all.py --binary-splits 50 --three-class-splits 20
 ```
-*(提示：此標竿測試計算量較大，大約需要 5-15 分鐘，請耐心等待其執行完畢。)*
+*(提示：完整標竿測試計算量最大，依您的硬體設備可能需要 60 分鐘，請耐心等待。)*
+
+#### 2. 單獨生成特定的圖表或表格
+如果您只需要特定的圖表供報告使用，可以加上對應的參數指令。程式會「自動判定」並只執行該圖表所需的底層運算，幫您省下大量時間：
+
+* **產生 Figure 2 (Sleep/Wake ROC 與 PR 曲線圖)**
+  ```bash
+  uv run scripts/02_reproduce_all.py --plot-sw-roc --plot-sw-pr --binary-splits 50
+  ```
+* **產生三分類的 Bland-Altman 分析圖**
+  ```bash
+  uv run scripts/02_reproduce_all.py --plot-bland-altman --three-class-splits 20
+  ```
+* **單獨產出 Benchmark 數據對比表格 (Tables 2-6 對等數據)**
+  ```bash
+  uv run scripts/02_reproduce_all.py --generate-tables --binary-splits 50 --three-class-splits 20
+  ```
+
+*(備註：`--binary-splits` 與 `--three-class-splits` 代表蒙地卡羅交叉驗證的隨機抽樣折數。數值越大越穩定，但執行越久；若您只是想快速測試程式是否正常運作，可以將其調降為 `5` 或 `10`。)*
 
 ---
 
