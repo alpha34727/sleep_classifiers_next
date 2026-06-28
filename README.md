@@ -104,7 +104,6 @@ sleep_classifiers/                       sleep_classifiers_next/
    cd ~\Desktop
    git clone https://github.com/alpha34727/sleep_classifiers_next
    ```
-*(註：請將網址替換為實際的專案 Git 網址)*
 
 ### 第二步：安裝 `uv`（環境管理工具）
 1. 在同一個終端機視窗中，複製以下指令並貼上，然後按下 `Enter` 鍵執行：
