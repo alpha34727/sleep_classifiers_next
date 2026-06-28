@@ -179,3 +179,40 @@ uv run scripts/03_reproduce_all.py --binary-splits 50 --three-class-splits 20
 
 ### 2. 標竿對比報告 (`outputs/tables/` 目錄)
 * **`full_paper_benchmark.md`**：一份自動生成的 Markdown 報告。其中包含與論文 Table 2 至 Table 6 完全對等的詳細性能對比表格，詳細記錄了不同模型在各個特徵子集上的 Accuracy、Specificity (Wake Correct)、Sensitivity (Sleep Correct)、Cohen's Kappa 以及 AUC 數值。
+
+---
+
+## 致謝 (Acknowledgments)
+
+本專案的工程重構之旅，完全建立在原著團隊遠大的學術願景與無私的開源精神之上。在此誠摯致謝：
+
+* **原著論文研究團隊**：**Dr. Olivia Walch, Yitong Huang, Daniel Forger 與 Dr. Cathy Goldstein**。在消費級穿戴式裝置演算法普遍被視為商業機密、原始感測器數據極度封閉的 2019 年，團隊展現了令人敬佩的學術勇氣，率先開源了透過 Apple Watch 原始加速度計與 PPG 心率推估睡眠階段的完整數學公式。
+* **資料集基礎設施**：感謝美國密西根大學睡眠與時間生理學實驗室（University of Michigan Sleep and Chronophysiology Laboratory）以及 **PhysioNet** 平台，為本研究提供了極其寶貴、且伴隨 PSG 黃金標準交叉驗證的開放資料集。
+
+*「如果我們能看得更遠，那是因為我們站在巨人的肩膀上。」* —— 謹以 `sleep_classifiers_next` 現代化專案，向原作者團隊致以最深的敬意。
+
+---
+
+## 授權與引用須知 (License & Citation)
+
+### 雙層授權聲明 (Dual-Layer Licensing)
+本專案採用雙層授權模式，確保學術貢獻的歸屬並賦予軟體工程架構最大的開源自由度：
+1. **軟體工程架構 (MIT License)**：本專案引入之現代化程式架構、ETL 資料管線、策略模式與封裝設計，皆採用寬鬆的 [MIT 授權條款](LICENSE)。
+2. **學術演算法本體 (CC BY-NC 4.0)**：底層的睡眠階段分類方法論、高斯差分數學濾波器、模型標竿參數等核心知識產權，仍受原始論文之 **創用 CC 姓名標示-非商業性 4.0 國際授權條款 (CC BY-NC 4.0)** 規範。
+
+> ⚠️ **嚴禁商業用途紅線**：若第三方開發者或企業欲將本專案之預測模型或其衍生應用，整合至任何商業化穿戴式裝置、付費應用程式或其他具營利性質之產品服務中，必須事先取得**牛津大學出版社 (Oxford University Press)** 的獨立書面授權（聯繫信箱：`journals.permissions@oup.com`）。
+
+### 學術引用格式 (BibTeX)
+如果您在研究中使用了本專案的程式碼或演算法架構，請務必引用原始論文，以對原作者的研究貢獻表達最崇高的敬意：
+```bibtex
+@article{walch2019sleep,
+  title={Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device},
+  author={Walch, Olivia and Huang, Yitong and Forger, Daniel and Goldstein, Cathy},
+  journal={Sleep},
+  volume={42},
+  number={12},
+  pages={zsz180},
+  year={2019},
+  publisher={Oxford University Press US}
+}
+```
