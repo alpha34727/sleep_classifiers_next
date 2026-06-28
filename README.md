@@ -204,6 +204,6 @@ uv run scripts/03_reproduce_all.py --binary-splits 50 --three-class-splits 20
 
 ### 學術引用格式 (BibTeX)
 如果您在研究中使用了本專案的程式碼或演算法架構，請務必引用原始論文，以對原作者的研究貢獻表達最崇高的敬意：
-```text
+
 Olivia Walch, Yitong Huang, Daniel Forger, Cathy Goldstein, Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device, Sleep, Volume 42, Issue 12, December 2019, zsz180, https://doi.org/10.1093/sleep/zsz180
-```
+
