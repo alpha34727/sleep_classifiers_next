@@ -1,7 +1,7 @@
 # Sleep Classifiers Next: 現代化穿戴式裝置睡眠階段預測系統
 
 本專案是針對牛津大學睡眠研究學會（Oxford Sleep Research Society）於 2019 年發表的經典學術論文進行的現代化、生產級重構：
-> **論文引用**：*Walch et al., "Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device", SLEEPJ 2019.*
+> **論文引用**：Olivia Walch, Yitong Huang, Daniel Forger, Cathy Goldstein, Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device, *Sleep*, Volume 42, Issue 12, December 2019, zsz180, https://doi.org/10.1093/sleep/zsz180
 
 本系統旨在利用消費級智慧穿戴裝置所獲取的原始三軸加速度（Raw Acceleration）與光電容積脈搏波（PPG）心率資料，進行高精度的睡眠階段預估（包含二分類：睡眠/清醒，以及三分類：清醒/NREM/REM）。
 
@@ -104,7 +104,6 @@ sleep_classifiers/                       sleep_classifiers_next/
    cd ~\Desktop
    git clone https://github.com/alpha34727/sleep_classifiers_next
    ```
-*(註：請將網址替換為實際的專案 Git 網址)*
 
 ### 第二步：安裝 `uv`（環境管理工具）
 1. 在同一個終端機視窗中，複製以下指令並貼上，然後按下 `Enter` 鍵執行：
@@ -204,15 +203,6 @@ uv run scripts/03_reproduce_all.py --binary-splits 50 --three-class-splits 20
 
 ### 學術引用格式 (BibTeX)
 如果您在研究中使用了本專案的程式碼或演算法架構，請務必引用原始論文，以對原作者的研究貢獻表達最崇高的敬意：
-```bibtex
-@article{walch2019sleep,
-  title={Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device},
-  author={Walch, Olivia and Huang, Yitong and Forger, Daniel and Goldstein, Cathy},
-  journal={Sleep},
-  volume={42},
-  number={12},
-  pages={zsz180},
-  year={2019},
-  publisher={Oxford University Press US}
-}
-```
+
+> Olivia Walch, Yitong Huang, Daniel Forger, Cathy Goldstein, Sleep stage prediction with raw acceleration and photoplethysmography heart rate data derived from a consumer wearable device, Sleep, Volume 42, Issue 12, December 2019, zsz180, https://doi.org/10.1093/sleep/zsz180
+
