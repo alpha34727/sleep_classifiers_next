@@ -85,11 +85,12 @@ sleep_classifiers/                       sleep_classifiers_next/
 雖然我們全面重構了底層的 ETL 與物件架構，但針對生醫訊號處理的數學算子與視窗切片邏輯，本專案保證與原始論文具有 **1:1 的嚴格數學等價性**：
 
 * **高斯差分濾波器 (Difference of Gaussians, DoG)**
-  心率訊號預處理使用雙高斯卷積核（標準差 $\sigma_1 = 120\,\text{s}$，$\sigma_2 = 600\,\text{s}$，縮放因子 $0.75$）進行帶通濾波，確保心率變異特徵與論文完全一致。
+  心率訊號預處理使用雙高斯卷積核（標準差 $\sigma_1 = 120 \text{s}$，$\sigma_2 = 600 \text{s}$，縮放因子 $0.75$）進行帶通濾波，確保心率變異特徵與論文完全一致。
 * **活動量計數高斯平滑**
-  利用高斯核（標準差 $\sigma = 50\,\text{s}$）進行活動計數（Activity Count）卷積平滑。
+  利用高斯核（標準差 $\sigma = 50 \text{s}$）進行活動計數（Activity Count）卷積平滑。
 * **時間視窗切片 (Window Slicing)**
-  以當前 Epoch 為中心，採用 $\pm 5\,\text{min}$（即 $10 \times 30\,\text{s} - 15\,\text{s} = 285\,\text{s}$ 前後擴展，共計 $600\,\text{s}$ 或 10 分鐘寬度）的滑動視窗進行局部特徵描述統計。
+  以當前 Epoch 為中心，採用 $\pm 5 \text{min}$（即 $10 \times 30 \text{s} - 15 \text{s} = 285 \text{s}$ 前後擴展，共計 $600 \text{s}$ 或 10 分鐘寬度）的滑動視窗進行局部特徵描述統計。
+
 
 ---
 
