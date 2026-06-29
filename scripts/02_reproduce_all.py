@@ -152,9 +152,11 @@ def main():
         sw_perf_dict = {}
         tc_perf_dict = {}
         
-        for feature_set in FEATURE_SETS:
+        inner_bar = tqdm(FEATURE_SETS, desc=f"Features ({cls_name})", leave=False)
+        for feature_set in inner_bar:
             feat_key = FEATURE_TO_KEY[tuple(feature_set)]
             feat_label = FEATURE_LABELS[feat_key]
+            inner_bar.set_postfix({"feat": feat_label})
             
             # --- Sleep/Wake (Binary) ---
             if args.run_binary:
