@@ -157,49 +157,49 @@ sleep_classifiers_next/
 
 ### 第六步：執行分析與圖表生成 (Reproduce Figures & Tables)
 
-新版架構透過單一入口腳本 `02_reproduce_all.py` 管理所有的實驗，並具備彈性的參數控制能力。您可以根據需求，自由決定要重現整篇論文的所有結果，或是單獨生成特定的圖表或表格，大幅節省運算時間。
+新版架構透過單一入口腳本 `02_reproduce_all.py` 管理所有的實驗，並具備彈性的參數控制能力。您可以根據需求，自由決定要重現整篇論文的所有結果，或是單獨生成特定的圖表或表格，大幅節省運算時間。所有產出檔案將會自動儲存至專案根目錄的 `outputs/` 資料夾中。
 
 #### 1. 完整重現所有結果 (Reproduce All)
-若您想要一次性跑完所有的二分類與三分類交叉驗證，並生成所有的圖表與 Markdown 數據表格，請直接執行（不加任何參數預設即為跑完全部）：
+若您想要一次性跑完所有的二分類與三分類交叉驗證，並生成所有的圖表與 Markdown 數據表格，請執行（不加任何參數預設即為跑完全部）：
 ```bash
 uv run scripts/02_reproduce_all.py --binary-splits 50 --three-class-splits 20
 ```
 *(提示：完整標竿測試計算量最大，依您的硬體設備可能需要 60 分鐘，請耐心等待。)*
 
-#### 2. 單獨生成特定的圖表或表格
-如果您只需要特定的圖表供報告使用，可以加上對應的參數指令。程式會「自動判定」並只執行該圖表所需的底層運算，幫您省下大量時間：
+#### 2. 單獨生成特定的學術圖表與表格 (Reproduce Specific Items)
+程式會「自動判定」並只執行該圖表所需的底層運算，幫您省下大量時間。以下為論文中關鍵圖表/表格與產生指令的對應：
 
-* **產生 Figure 2 (Sleep/Wake ROC 與 PR 曲線圖)**
+* **Figure 2 & 3: 睡眠/清醒 (Sleep/Wake) 分類的 ROC 與 PR 曲線網格圖**
+  > 產出檔案：`outputs/figures/combined_sw_roc.png` 與 `combined_sw_pr.png`
   ```bash
   uv run scripts/02_reproduce_all.py --plot-sw-roc --plot-sw-pr --binary-splits 50
   ```
-* **產生三分類的 Bland-Altman 分析圖**
+
+* **Figure 4: 三分類 (清醒/NREM/REM) 的 ROC 曲線與最佳閾值搜尋**
+  > 產出檔案：`outputs/figures/[ClassifierName]_three_class_roc.png`
+  ```bash
+  uv run scripts/02_reproduce_all.py --plot-staging-roc --three-class-splits 20
+  ```
+
+* **Figure 5 & 8: 預估總睡眠時間 (TST) 的 Bland-Altman 偏差一致性分析圖**
+  > 產出檔案：`outputs/figures/[ClassifierName]_bland_altman.png`
   ```bash
   uv run scripts/02_reproduce_all.py --plot-bland-altman --three-class-splits 20
   ```
-* **單獨產出 Benchmark 數據對比表格 (Tables 2-6 對等數據)**
+
+* **(新版擴充): LightGBM 模型的 TreeSHAP 特徵貢獻度解釋圖**
+  > 產出檔案：`outputs/figures/modern_lightgbm_shap_summary.png`
+  ```bash
+  uv run scripts/02_reproduce_all.py --run-binary --binary-splits 50
+  ```
+
+* **Table 2 ~ 6: 各模型在不同特徵子集下的效能總表**
+  > 產出檔案：`outputs/tables/full_paper_benchmark.md`
   ```bash
   uv run scripts/02_reproduce_all.py --generate-tables --binary-splits 50 --three-class-splits 20
   ```
 
 *(備註：`--binary-splits` 與 `--three-class-splits` 代表蒙地卡羅交叉驗證的隨機抽樣折數。數值越大越穩定，但執行越久；若您只是想快速測試程式是否正常運作，可以將其調降為 `5` 或 `10`。)*
-
----
-
-## 產出圖表與報告位置指引
-
-當上述步驟執行完畢後，所有產出的學術圖表與效能數據報告都會自動儲存在專案根目錄下的 **`outputs`** 資料夾中：
-
-### 1. 學術分析圖表 (`outputs/figures/` 目錄)
-您可以在此資料夾下找到與論文對等的關鍵圖表：
-* **`combined_sw_roc.png`**：所有模型在二分類（睡眠/清醒）任務下的 ROC 接收者操作特徵曲線網格圖。
-* **`combined_sw_pr.png`**：所有模型在二分類（睡眠/清醒）任務下的 Precision-Recall 準確率-召回率曲線網格圖。
-* **`modern_lightgbm_shap_summary.png`**：LightGBM 模型的 TreeSHAP 特徵貢獻度解釋圖，直觀展示 Motion、HR 與時間特徵對預測的影響力。
-* **`[ClassifierName]_three_class_roc.png`**：指定模型在三分類（清醒/NREM/REM）任務下，尋找最佳平衡準確率閾值的曲線圖。
-* **`[ClassifierName]_bland_altman.png`**：預估總睡眠時間（TST）與 PSG 黃金標準的 Bland-Altman 偏差一致性分析散點圖。
-
-### 2. 標竿對比報告 (`outputs/tables/` 目錄)
-* **`full_paper_benchmark.md`**：一份自動生成的 Markdown 報告。其中包含與論文 Table 2 至 Table 6 完全對等的詳細性能對比表格，詳細記錄了不同模型在各個特徵子集上的 Accuracy、Specificity (Wake Correct)、Sensitivity (Sleep Correct)、Cohen's Kappa 以及 AUC 數值。
 
 ---
 
