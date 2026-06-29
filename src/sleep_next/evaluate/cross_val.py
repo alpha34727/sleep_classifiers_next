@@ -98,11 +98,11 @@ def run_single_fold(
     # alpha toward sleep-favoring values and degrades wake specificity by 3-8 pp.
     #
     # We inject balanced class weights here for models that accept the param (RF, LR).
-    # KNN does not have a class_weight parameter (matching the legacy behaviour where
-    # KNN was also not explicitly weighted during GridSearchCV).
+    # If REPRODUCE_LEGACY_GRID_SEARCH_BUG is True, we simulate the legacy bug where the dynamically
+    # assigned class_weight attribute is lost during cloning in GridSearchCV.
     from sleep_next.models.legacy import get_class_weights as _get_class_weights
     balanced_cw = _get_class_weights(y_train)
-    if hasattr(strategy.model, 'class_weight'):
+    if hasattr(strategy.model, 'class_weight') and not settings.REPRODUCE_LEGACY_GRID_SEARCH_BUG:
         strategy.model.set_params(class_weight=balanced_cw)
 
     if is_tree_model:
@@ -162,14 +162,21 @@ def run_cross_validation(
             splits.append((train_set, test_set))
     elif cv_type == "mc":
         # Shuffle deterministically to match trial expectations but maintain reproducibility per run
-        rnd = random.Random(42)
+        # If REPRODUCE_LEGACY_SPLIT is enabled, we use the global unseeded random module to shuffle,
+        # mimicking the original behavior where splits are completely random and non-deterministic.
+        if settings.REPRODUCE_LEGACY_SPLIT:
+            shuffler = random
+        else:
+            shuffler = random.Random(42)
+            
         test_index = int(np.round(test_fraction * len(subject_ids)))
         for _ in range(number_of_splits):
             shuffled = subject_ids.copy()
-            rnd.shuffle(shuffled)
+            shuffler.shuffle(shuffled)
             test_set = shuffled[:test_index]
             train_set = shuffled[test_index:]
             splits.append((train_set, test_set))
+            
             
     raw_performances = []
     

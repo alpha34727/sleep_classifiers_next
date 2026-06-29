@@ -36,8 +36,12 @@ def load_raw_motion(subject_id: str) -> pl.DataFrame:
         new_columns=["timestamp", "x", "y", "z"],
         schema_overrides={"timestamp": pl.Float64, "x": pl.Float32, "y": pl.Float32, "z": pl.Float32}
     )
-    # Remove repeats (same timestamp)
-    df = df.unique(subset=["timestamp"], keep="first", maintain_order=True)
+    # Remove repeats
+    if settings.REPRODUCE_LEGACY_BUG:
+        df = df[1:]
+        df = df.unique().sort("timestamp")
+    else:
+        df = df.unique(subset=["timestamp"], keep="first", maintain_order=True)
     return df
 
 def load_raw_heart_rate(subject_id: str) -> pl.DataFrame:
@@ -49,5 +53,9 @@ def load_raw_heart_rate(subject_id: str) -> pl.DataFrame:
         new_columns=["timestamp", "heart_rate"],
         schema_overrides={"timestamp": pl.Float64, "heart_rate": pl.Float32}
     )
-    df = df.unique(subset=["timestamp"], keep="first", maintain_order=True)
+    if settings.REPRODUCE_LEGACY_BUG:
+        df = df[1:]
+        df = df.unique().sort("timestamp")
+    else:
+        df = df.unique(subset=["timestamp"], keep="first", maintain_order=True)
     return df

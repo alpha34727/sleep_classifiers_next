@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     REM_THRESHOLD: float = 0.35
     LOWER_BOUND: float = -0.2
     INCLUDE_CIRCADIAN: bool = False
+    REPRODUCE_LEGACY_BUG: bool = True # 這是原論文程式碼的bug，原論文在呼叫 pd.read_csv 時沒有指定 header=None，導致預處理完的資料第一行被當作表頭丟棄。
+    REPRODUCE_LEGACY_SPLIT: bool = False # 是否模擬原始專案的 bug，即在 Monte Carlo 分割時不固定隨機 seed 且對不同分類器使用獨立的隨機分割。
+    REPRODUCE_LEGACY_GRID_SEARCH_BUG: bool = False # 是否模擬原始專案的 bug，即在 GridSearchCV 內部交叉驗證時，因 sklearn clone 機制導致動態綁定的 class_weight 屬性遺失，使超參數搜尋在不平衡狀態下進行。
     
     model_config = SettingsConfigDict(
         env_prefix="SLEEP_",

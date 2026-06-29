@@ -68,6 +68,11 @@ def build_features_for_subject(subject_id: str):
     hr_df = pl.read_parquet(settings.CROPPED_DIR / f"{subject_id}_cleaned_hr.parquet")
     counts_df = pl.read_parquet(settings.CROPPED_DIR / f"{subject_id}_cleaned_counts.parquet")
     
+    if settings.REPRODUCE_LEGACY_BUG:
+        psg_df = psg_df[1:]
+        hr_df = hr_df[1:]
+        counts_df = counts_df[1:]
+        
     start_time = psg_df["timestamp"][0]
     
     # Compute valid epochs:
