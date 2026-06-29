@@ -28,8 +28,8 @@ CLASSIFIERS = {
     "knn": (legacy.KNNStrategy, {}, "k-Nearest Neighbors"),
     "random_forest": (legacy.RandomForestStrategy, {}, "Random Forest"),
     "neural_net": (legacy.NeuralNetStrategy, {}, "Neural Net"),
-    "lightgbm": (modern.LightGBMStrategy, {}, "LightGBM"),
-    "xgboost": (modern.XGBoostStrategy, {}, "XGBoost")
+    # "lightgbm": (modern.LightGBMStrategy, {}, "LightGBM"),
+    # "xgboost": (modern.XGBoostStrategy, {}, "XGBoost")
 }
 
 FEATURE_SETS = [
