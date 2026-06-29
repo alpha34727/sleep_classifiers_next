@@ -535,7 +535,7 @@ def combine_plots_as_grid(classifiers, number_of_trials, plot_extension):
     max_width = max(widths)
     max_height = max(heights)
     
-    new_image = Image.new('RGB', (2 * max_width, 2 * max_height))
+    new_image = Image.new('RGB', (2 * max_width, int(np.ceil(len(classifiers) / 2.0)) * max_height))
     
     for count, im in enumerate(images):
         x_offset = int((count % 2) * max_width)
